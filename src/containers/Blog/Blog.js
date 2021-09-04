@@ -1,67 +1,53 @@
 import React, { Component } from 'react';
-import Post from '../../components/Post/Post';
-import FullPost from '../../components/FullPost/FullPost';
-import NewPost from '../../components/NewPost/NewPost';
+import Posts from '../Blog/Posts/Posts';
+//import NewPost from './NewPost/NewPost';
+//import FullPost from '../Blog/FullPost/FullPost';
 import './Blog.css';
-import axios from '../../axios';
+import {Route, NavLink, Switch, Redirect} from 'react-router-dom';
+import asyncComponent from '../../hoc/AsyncComponent';
+
+const asyncNewPost = asyncComponent(() => import('./NewPost/NewPost'));
 
 class Blog extends Component {
 
-    state = {
-        posts:[],
-        selected:null,
-        error:false
-    }
-
-    componentDidMount () {
-        axios.get('/posts')
-            .then(response => {
-                const posts = response.data.slice(0, 4); 
-                const updatedPosts = posts.map(post => {
-                    return {
-                        ...post,
-                        author:'max'
-                    }
-                });
-                this.setState({posts: updatedPosts});
-                // console.log(updatedPosts)
-                })
-                .catch(error => {
-                    this.setState({error:true});
-                });
-                
-    }
-
-    postSelected = (id) => {
-        this.setState({selected:id});
+    state={
+        auth:true
     }
 
     render () {
-        
-        let posts = <p style={{textAlign: 'center'}}>Something went Wrong</p>;
-        if(!this.state.error){
-        posts = this.state.posts.map(
-            post => {
-                return <Post 
-                    key={post.id} 
-                    title={post.title} 
-                    author={post.author}
-                    clicked={()=>this.postSelected(post.id)}/>;
-            }
-        );
-        }
 
         return (
-            <div>
-                <section className="Posts">
-                    {posts}
-                </section>
-                <section>
-                    <FullPost id={this.state.selected}/>
-                </section>
-                <section>
-                    <NewPost />
-                </section>
+            <div className="Blog">
+                <header>
+                    <nav>
+                        <ul>
+                            <li><NavLink 
+                                to="/posts/" 
+                                activeClassName="my-active"
+                                activeStyle={{
+                                    color:'#fa923f',
+                                    textDecoration:'underline'
+                                }}>Posts</NavLink></li>
+                            <li><NavLink to={{
+                                pathname: '/new-post',
+                                hash: '#submit',
+                                search:'?quick-submit=true'
+                            }}>New Post</NavLink></li>
+                        </ul>
+                    </nav>
+                </header>
+                {/* <Route path="/" exact render={() => <Posts/>} /> */}
+
+                {/* switch to make sure to load one route at a time and ordering routes is important */}
+                <Switch>
+
+                {this.state.auth?<Route path='/new-post' component={asyncNewPost}/>:null}
+                <Route path='/posts' component={Posts}/>
+                <Redirect from="/" exact to="/posts" /> 
+                <Route render={()=> <h1>404</h1>} />
+                {/* <Redirect from="/" to="/posts" /> */}
+
+                </Switch>
             </div>
         );
     }
